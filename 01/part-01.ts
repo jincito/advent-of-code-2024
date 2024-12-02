@@ -1,46 +1,59 @@
-import * as fs from "node:fs";
+import * as fs from "fs";
 
-// read file
-const file = fs.readFileSync("./input-01.txt").toString();
-const fileArr = file.split("\n");
-
-// sort left / right columns into separate arrays
-const leftArr: number[] = [];
-const rightArr: number[] = [];
-
-// we're going to need to check that what we're consuming is actually a number at some point..
-for (const row of fileArr) {
-    if(row === "") {
-        continue;
+// read the file and handle errors
+function readInputFile(filePath: string): string[] {
+    try {
+      const file = fs.readFileSync(filePath, "utf-8").trim();
+      return file.split("\n");
+    } catch (error) {
+      console.error("Error reading input file:", (error as Error).message);
+      process.exit(1); // exit error code
     }
-    // the numbers are separated by 3 space characters
-    const nums = row.split("   ")
+  }  
 
-    // there might be an error thrown in the below code, but in this case, we want to crash
-    // the program, not really clear what to do in the case of an error, there's nothing we can do
-    // to handle it gracefully at the moment
-    if(!nums[0] && !nums[1] || nums.length === 1) {
-        throw new Error("No valid nums found")
+// parse the nums in file into two arrays
+function parseInput(fileArr: string[]): [number[], number[]] {
+  const leftArr: number[] = [];
+  const rightArr: number[] = [];
+
+  fileArr.forEach((row) => {
+    if (row === "") {
+        return; // skip empties
     }
-    leftArr.push(new Number(nums[0]).valueOf())
-    rightArr.push(new Number(nums[1]).valueOf())
+    
+    // regular expression to split by 3 spaces
+    const nums = row.split(/\s{3}/);
+
+    // validate that we got exactly two numbers
+    if (nums.length !== 2 || isNaN(Number(nums[0])) || isNaN(Number(nums[1]))) {
+      console.error(`Invalid line: "${row}". Skipping this row.`);
+      return; // skip invalid row
+    }
+
+    // push nums into arrays: left and right
+    leftArr.push(Number(nums[0]));
+    rightArr.push(Number(nums[1]));
+  });
+
+  return [leftArr, rightArr];
 }
 
-// sort arrays
-// idc about big O complexity right now, just getting to a solution
-const sortedLeft = leftArr.sort();
-const sortedRight = rightArr.sort();
+// calculate the sum of differences between two sorted arrays
+function calculateDifference(leftArr: number[], rightArr: number[]): number {
+  // sort the arrays
+  const sortedLeft = leftArr.sort();
+  const sortedRight = rightArr.sort();
 
-let sum = 0;
+  // calculate the sum of differences
+  return sortedLeft.reduce((sum, val, i) => {
+    return sum + Math.abs(val - sortedRight[i]); // absolute difference between corresponding elements
+  }, 0);
+}
 
-sortedLeft.forEach((val, i) => {
-    // subtract the lesser number from the greater number to get the difference
-    // add up the difference between the two numbers to get the final answer
-    if(val > sortedRight[i]) {
-        sum += val - sortedRight[i]
-    } else {
-        sum += sortedRight[i] - val
-    }
-})
+// main
+const filePath = "./input-01.txt";
+const fileArr = readInputFile(filePath);
+const [leftArr, rightArr] = parseInput(fileArr);
+const sum = calculateDifference(leftArr, rightArr);
 
-console.log(`P1: The sum is ${sum}`)
+console.log(`P1: The sum is ${sum}`);

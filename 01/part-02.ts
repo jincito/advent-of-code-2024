@@ -1,51 +1,56 @@
-import * as fs from "node:fs";
+import * as fs from "fs";
 
-// read file
-const file = fs.readFileSync("./input-01.txt").toString();
-const fileArr = file.split("\n");
+// read input file and process the data
+function readInputFile(filePath: string): { leftArr: number[], rightArrIndex: Map<number, number> } {
+  const file = fs.readFileSync(filePath, "utf-8").trim();
+  const fileArr = file.split("\n");
 
-const leftArr: number[] = [];
-// these maps will help us count how many occurrences of each number there are
-// in both columns
-// we'll count them as we loop through the rows to save a bit of time
-const leftArrIndex: Map<number, number> = new Map();
-const rightArrIndex: Map<number, number> = new Map();
+  const leftArr: number[] = [];
+  const rightArrIndex: Map<number, number> = new Map();
 
-// we're going to need to check that what we're consuming is actually a number at some point..
-for (const row of fileArr) {
-    if(row === "") {
+  // iterate through the rows, process the data and populate arrays/maps
+  for (const row of fileArr) {
+    if (row.trim() === "") {
         continue;
     }
-    // the numbers are separated by 3 space characters
-    const nums = row.split("   ")
-
-    // there might be an error thrown in the below code, but in this case, we want to crash
-    // the program, not really clear what to do in the case of an error, there's nothing we can do
-    // to handle it gracefully at the moment
-    if(!nums[0] && !nums[1] || nums.length === 1) {
-        throw new Error("No valid nums found")
+    
+    const [leftStr, rightStr] = row.split("   ");
+    if (!leftStr || !rightStr) {
+      throw new Error("No valid numbers found in row");
     }
 
-    const leftNum = new Number(nums[0]).valueOf()
-    const rightNum = new Number(nums[1]).valueOf()
+    const leftNum = parseInt(leftStr, 10);
+    const rightNum = parseInt(rightStr, 10);
 
     leftArr.push(leftNum);
-
-    // check if num has been counted in its appropriate index
-    leftArrIndex.set(leftNum, (leftArrIndex.get(leftNum) ?? 0) + 1);
     rightArrIndex.set(rightNum, (rightArrIndex.get(rightNum) ?? 0) + 1);
+  }
+
+  return { leftArr, rightArrIndex };
 }
 
-let similarityScore = 0;
+// calculate the similarity score
+function calculateSimilarityScore(leftArr: number[], rightArrIndex: Map<number, number>): number {
+  let similarityScore = 0;
 
-for (const leftKey of leftArr) {
-    if(!rightArrIndex.get(leftKey)) {
-        console.log(`${leftKey} does not appear in right column, continuing`)
-        continue;
-    } else {
-        console.log(`${leftKey} appears in rightArr ${rightArrIndex.get(leftKey)} times, multiplied together is ${leftKey * rightArrIndex.get(leftKey)!}`)
-        similarityScore += leftKey * rightArrIndex.get(leftKey)!;
-    }
+  // checking occurrences of numbers in the right column
+  leftArr.forEach((leftKey) => {
+    const countInRight = rightArrIndex.get(leftKey) ?? 0;
+    similarityScore += leftKey * countInRight;
+  });
+
+  return similarityScore;
 }
 
-console.log(`P2: similarity score is: ${similarityScore}`);
+function main() {
+  try {
+    const { leftArr, rightArrIndex } = readInputFile("./input-01.txt");
+    const similarityScore = calculateSimilarityScore(leftArr, rightArrIndex);
+
+    console.log(`P2: Similarity score is: ${similarityScore}`);
+  } catch (error) {
+    console.error("Error:", (error as Error).message);
+  }
+}
+
+main();
