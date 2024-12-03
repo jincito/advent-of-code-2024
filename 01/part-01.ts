@@ -9,7 +9,7 @@ function readInputFile(filePath: string): string[] {
       console.error("Error reading input file:", (error as Error).message);
       process.exit(1); // exit error code
     }
-  }  
+}
 
 // parse the nums in file into two arrays
 function parseInput(fileArr: string[]): [number[], number[]] {
